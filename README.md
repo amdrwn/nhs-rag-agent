@@ -1,6 +1,6 @@
 # NHS Performance RAG Agent
 
-**Tools:** Python · FAISS · Sentence Transformers · Groq (Llama 3.1 8B Instant) · Streamlit  
+**Tools:** Python · FAISS · Sentence Transformers · Groq (GPT-OSS 20B) · Streamlit  
 **Data:** NHS England A&E and RTT Waiting List — January 2025  
 **Domain:** Healthcare analytics · Natural language querying over structured NHS data  
 
@@ -8,7 +8,7 @@
 
 ## Overview
 
-A retrieval-augmented generation (RAG) system for natural language lookup of NHS England performance records. Users can ask questions about A&E breach rates, RTT waiting times, and trust-level performance without manually searching spreadsheets. The system retrieves semantically relevant records and provides them as context to an LLM for grounded answer generation.
+A retrieval-augmented generation (RAG) system for natural language lookup of NHS England performance records. Users can ask questions about A&E breach rates, RTT waiting times, and individual trust-level records without manually searching spreadsheets. The system retrieves semantically relevant records and provides them as context to an LLM for grounded answer generation. 
 
 The project demonstrates a full NLP pipeline: structured data ingestion, text chunk generation, semantic embedding, FAISS vector indexing, and LLM-powered answer generation via the Groq API.
 
@@ -28,7 +28,7 @@ Sentence Transformer    ← Embeds chunks (all-MiniLM-L6-v2)
 FAISS Vector Index      ← Cosine-similarity retrieval over embedded records
      │
      ▼
-Groq LLM (Llama 3.1 8B Instant)      ← Generates answer from retrieved context
+Groq LLM (GPT-OSS 20B)  ← Generates answer from retrieved context
      │
      ▼
 Streamlit UI            ← User query interface
@@ -54,17 +54,15 @@ This representation enables semantic retrieval of records relevant to trust- and
 
 ## Repository Structure
 ```
-├── src/
-│   ├── data_processor.py      # Converts NHS CSVs to text chunks
-│   ├── vector_store.py        # Builds and saves FAISS index
-│   └── rag_pipeline.py        # Retrieval + Groq LLM answer generation
-├── app.py                     # Streamlit query interface
-├── data/
-│   ├── chunks.json            # Generated text chunks
-│   ├── faiss.index            # FAISS vector index
-│   └── metadata.json          # Chunk metadata for retrieval
-├── .env.example               # Environment variable template
-├── .gitignore                 # Excludes .env and data files
+nhs-rag-agent/
+├── app.py
+├── data_processor.py
+├── vector_store.py
+├── rag_pipeline.py
+├── requirements.txt
+├── .env.example
+├── .gitignore
+├── LICENSE
 └── README.md
 ```
 
@@ -87,7 +85,7 @@ This representation enables semantic retrieval of records relevant to trust- and
 | Data processing | Python · pandas |
 | Text embedding | sentence-transformers (all-MiniLM-L6-v2) |
 | Vector store | FAISS (faiss-cpu) |
-| LLM | Groq API · Llama 3.1 8B Instant |
+| LLM | Groq API · GPT-OSS 20B |
 | UI | Streamlit |
 | Environment | python-dotenv |
 
@@ -113,8 +111,8 @@ cp .env.example .env
 # - RTT: https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/
 
 # 5. Process data and build vector store
-python src/data_processor.py
-python src/vector_store.py
+python data_processor.py
+python vector_store.py
 
 # 6. Run the app
 python -m streamlit run app.py
