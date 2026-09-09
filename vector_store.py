@@ -1,7 +1,5 @@
 import json
 import faiss
-import numpy as np
-from pathlib import Path
 from sentence_transformers import SentenceTransformer
 
 def build_vector_store(chunks_path: str, index_path: str, metadata_path: str):
@@ -13,11 +11,14 @@ def build_vector_store(chunks_path: str, index_path: str, metadata_path: str):
 
     print(f"Encoding {len(texts)} chunks...")
     model = SentenceTransformer("all-MiniLM-L6-v2")
-    embeddings = model.encode(texts, show_progress_bar=True)
-    embeddings = np.array(embeddings).astype("float32")
+    embeddings = model.encode(
+        texts,
+        show_progress_bar=True,
+        normalize_embeddings=True
+    ).astype("float32")
 
     dimension = embeddings.shape[1]
-    index = faiss.IndexFlatL2(dimension)
+    index = faiss.IndexFlatIP(dimension)
     index.add(embeddings)
 
     faiss.write_index(index, index_path)
