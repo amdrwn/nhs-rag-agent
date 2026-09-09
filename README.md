@@ -1,6 +1,6 @@
 # NHS Performance RAG Agent
 
-**Tools:** Python · FAISS · Sentence Transformers · Groq (Llama 3) · Streamlit
+**Tools:** Python · FAISS · Sentence Transformers · Groq (Llama 3.1 8B Instant) · Streamlit  
 **Data:** NHS England A&E and RTT Waiting List — January 2025  
 **Domain:** Healthcare analytics · Natural language querying over structured NHS data  
 
@@ -8,7 +8,7 @@
 
 ## Overview
 
-A retrieval-augmented generation (RAG) system that enables natural language querying over NHS England performance data. Users can ask questions about A&E breach rates, RTT waiting times, and trust-level performance without requiring SQL or manual exploration of spreadsheets, and the system retrieves the most relevant data chunks and generates a grounded, cited answer. This approach enables faster, more accessible analysis of NHS performance data, reducing reliance on manual reporting and enabling non-technical users to explore system-wide bottlenecks.
+A retrieval-augmented generation (RAG) system for natural language lookup of NHS England performance records. Users can ask questions about A&E breach rates, RTT waiting times, and trust-level performance without manually searching spreadsheets. The system retrieves semantically relevant records and provides them as context to an LLM for grounded answer generation.
 
 The project demonstrates a full NLP pipeline: structured data ingestion, text chunk generation, semantic embedding, FAISS vector indexing, and LLM-powered answer generation via the Groq API.
 
@@ -25,10 +25,10 @@ Data Processor          ← Converts rows to natural language chunks
 Sentence Transformer    ← Embeds chunks (all-MiniLM-L6-v2)
      │
      ▼
-FAISS Vector Index      ← Stores and retrieves by semantic similarity
+FAISS Vector Index      ← Cosine-similarity retrieval over embedded records
      │
      ▼
-Groq LLM (Llama 3)      ← Generates answer from retrieved context
+Groq LLM (Llama 3.1 8B Instant)      ← Generates answer from retrieved context
      │
      ▼
 Streamlit UI            ← User query interface
@@ -48,7 +48,7 @@ Each row is converted to a natural language chunk — for example:
 
 > *"In January 2025, CALDERDALE AND HUDDERSFIELD NHS FOUNDATION TRUST (code: RWY) recorded 14,485 Type 1 A&E attendances. 4,954 patients waited over 4 hours (34.2% breach rate). 33 patients waited 12 or more hours from decision to admit."*
 
-This format allows the embedding model to match semantic queries to specific trusts and metrics.
+This representation enables semantic retrieval of records relevant to trust- and metric-specific queries.
 
 ---
 
@@ -72,11 +72,11 @@ This format allows the embedding model to match semantic queries to specific tru
 
 ## Example Queries
 
-| Query | Answer |
+| Query | Example response |
 |---|---|
-| Which trust had the highest A&E breach rate in January 2025? | EAST SUFFOLK AND NORTH ESSEX NHS FOUNDATION TRUST (code: RDE) with a breach rate of 52.7% |
-| How many patients were waiting over 52 weeks for Cardiology? | 29 patients at The Queen Elizabeth Hospital, King's Lynn; 552 at Mid Cheshire Hospitals NHS Foundation Trust |
-| Who are you? | I am an NHS data analyst |
+| What was the A&E breach rate for Calderdale and Huddersfield in January 2025? | Reports the trust's Type 1 A&E breach rate from the retrieved record |
+| How many patients at Mid Cheshire Hospitals were waiting over 52 weeks for Cardiology? | Reports the over-52-week waiting count from the relevant RTT record |
+| What was the RTT position for Cardiology at a specific NHS trust? | Retrieves the relevant provider and treatment-function record |
 
 ---
 
@@ -126,12 +126,16 @@ python -m streamlit run app.py
 
 ## Limitations
 
-- Data covers January 2025 only — queries about other periods will not return results
-- The system retrieves the top 5 most semantically similar chunks; complex aggregate queries (e.g. national totals) may return partial results
-- Answer quality depends on whether the relevant trust/metric appears in the top 5 retrieved chunks
+- Data covers January 2025 only; queries about other periods are unsupported.
+- Retrieval operates over individual trust/treatment records rather than executing structured queries over the full dataset.
+- Aggregate, ranking, and comparison questions (e.g. national totals or "which trust had the highest rate?") cannot be answered reliably using top-k semantic retrieval alone.
+- Answer quality depends on the relevant record being retrieved and included in the LLM context.
+- Generated answers should be checked against the displayed source chunks for high-stakes use.
 
 ## Future Improvements
-- Add support for multi-month or time-series analysis
-- Implement retrieval evaluation metrics (e.g. precision@k)
-- Improve chunking with aggregation at trust or regional level
+
+- Add structured query/aggregation support for ranking, comparison and national-level questions
+- Add support for multiple months and time-series analysis
+- Implement retrieval evaluation metrics such as precision@k and recall@k
+- Explore hybrid semantic and metadata-based retrieval
 - Add caching for faster query responses
