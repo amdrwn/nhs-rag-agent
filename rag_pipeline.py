@@ -1,6 +1,5 @@
 import json
 import faiss
-import numpy as np
 import os
 from sentence_transformers import SentenceTransformer
 from groq import Groq
@@ -28,15 +27,19 @@ class NHSRagAgent:
         print("Ready.")
 
     def retrieve(self, query: str, top_k: int = 5) -> list[dict]:
-        query_embedding = self.embedder.encode([query]).astype("float32")
-        distances, indices = self.index.search(query_embedding, top_k)
+        query_embedding = self.embedder.encode(
+            [query],
+            normalize_embeddings=True
+        ).astype("float32")
+
+        scores, indices = self.index.search(query_embedding, top_k)
         
         results = []
         for i, idx in enumerate(indices[0]):
             results.append({
                 "text": self.texts[idx],
                 "metadata": self.metadata[idx],
-                "distance": float(distances[0][i])
+                "score": float(scores[0][i])
             })
         return results
 
@@ -45,8 +48,10 @@ class NHSRagAgent:
         context = "\n\n".join([c["text"] for c in chunks])
         
         prompt = (
-            f"You are an NHS data analyst. Answer the question using only "
-            f"the context provided. Be concise and specific.\n\n"
+            "You are an NHS data analyst. Answer the question using only the "
+            "context provided below. Do not use outside knowledge or infer values "
+            "that are not present in the context. If the retrieved context is "
+            "insufficient to answer the question, say so clearly. Be concise and specific.\n\n"
             f"Context:\n{context}\n\n"
             f"Question: {query}"
         )
@@ -70,8 +75,8 @@ if __name__ == "__main__":
     )
     
     test_queries = [
-        "Which trust had the highest A&E breach rate in January 2025?",
-        "How many patients were waiting over 52 weeks for Cardiology?",
+        "What was the A&E breach rate for Calderdale and Huddersfield in January 2025?",
+        "How many patients at Mid Cheshire Hospitals were waiting over 52 weeks for Cardiology?",
     ]
     
     for query in test_queries:
